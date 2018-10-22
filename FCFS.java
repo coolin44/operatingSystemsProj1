@@ -1,80 +1,92 @@
-package schedulerPackage;
+package eventScheduler;
 
 import java.util.*;
+import java.util.Random;
+import java.util.LinkedList; 
+import java.util.Queue; 
  
 public class FCFS {
+	
+	public static Queue<Event> q;
+	public static int numberOfProccessesCompleted;
+	public static Event head;
+	public static float newCompletionTime;
+	public static float newArrivalTime;
+	
+	public static void init(){
+		q = new LinkedList<Event>();
+		numberOfProccessesCompleted = 0;
+		Event head = null;
+		newCompletionTime = 0;
+		newArrivalTime = 0;
+	}
+	
+	
+	public static int generateArrivalTime(float lambda) {
+	    Random r = new Random();
+	    double L = Math.exp(-lambda);
+	    int k = 0;
+	    double p = 1.0;
+	    do {
+	        p = p * r.nextDouble();
+	        k++;
+	    } while (p > L);
+	    return k - 1;
+	}
+	
+	
+	public static float generateServiceTime(float lambda) {
+		float expRandom = (float) (-lambda * Math.log(Math.random())/Math.log(2));
+		return expRandom;
+	}
+	
+	public static float urand() {
+		Random rand = new Random();
+		float  n = rand.nextInt(1) + 0;
+		return n;
+	}	
+	
 	public static void main(String args[])
 	{
+		init();
 		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter lambda(average arrival rate): ");
+		float lambda = sc.nextFloat();
+		
 		System.out.println("enter no of process: ");
 		int n = sc.nextInt();
-		int pid[] = new int[n];   // process ids
-		int ar[] = new int[n];     // arrival times
-		int bt[] = new int[n];     // burst or execution times
-		int ct[] = new int[n];     // completion times
-		int ta[] = new int[n];     // turn around times
-		int wt[] = new int[n];     // waiting times 
-		int temp;
-		float avgwt=0,avgta=0;
- 
+
 		for(int i = 0; i < n; i++)
 		{
-			System.out.println("enter process " + (i+1) + " arrival time: ");
-			ar[i] = sc.nextInt();
-			System.out.println("enter process " + (i+1) + " brust time: ");
-			bt[i] = sc.nextInt();
-			pid[i] = i+1;
-		}
- 
-		//sorting according to arrival times
-		for(int i = 0 ; i <n; i++)
-		{
-			for(int  j=0;  j < n-(i+1) ; j++)
-			{
-				if( ar[j] > ar[j+1] )
-				{
-					temp = ar[j];
-					ar[j] = ar[j+1];
-					ar[j+1] = temp;
-					temp = bt[j];
-					bt[j] = bt[j+1];
-					bt[j+1] = temp;
-					temp = pid[j];
-					pid[j] = pid[j+1];
-					pid[j+1] = temp;
-				}
-			}
+			Event e = new Event();
+			
+			newArrivalTime += generateArrivalTime(lambda);
+			e.arrivalTime = newArrivalTime;
+			
+			e.serviceTime = generateServiceTime(lambda);
+			
+			System.out.println("The " + (i+1) + " Arrival Time is: " + e.arrivalTime);
+			System.out.println("The " + (i+1) + " Service Time is: " + e.serviceTime);
+
+			q.add(e);
+			
+			
+				
+		}	
+		
+		float clock = 0;
+		head = q.peek();
+		while(numberOfProccessesCompleted < 10000) {
+			head = q.peek();
+			numberOfProccessesCompleted++;
 		}
 		
-		// finding completion times
-		for(int  i = 0 ; i < n; i++)
-		{
-			if( i == 0)
-			{	
-				ct[i] = ar[i] + bt[i];
-			}
-			else
-			{
-				if( ar[i] > ct[i-1])
-				{
-					ct[i] = ar[i] + bt[i];
-				}
-				else
-					ct[i] = ct[i-1] + bt[i];
-			}
-			ta[i] = ct[i] - ar[i] ;          // turnaround time= completion time- arrival time
-			wt[i] = ta[i] - bt[i] ;          // waiting time= turnaround time- burst time
-			avgwt += wt[i] ;               // total waiting time
-			avgta += ta[i] ;               // total turnaround time
-		}
-		
-		System.out.println("\npid  arrival  brust  complete turn waiting");
-		for(int  i = 0 ; i< n;  i++)
-		{
-			System.out.println(pid[i] + "  \t " + ar[i] + "\t" + bt[i] + "\t" + ct[i] + "\t" + ta[i] + "\t"  + wt[i] ) ;
-		}
-		sc.close();
-		System.out.println("\naverage waiting time: "+ (avgwt/n));     // printing average waiting time.
-		System.out.println("average turnaround time:"+(avgta/n));    // printing average turnaround time.
+/*		
+			q.remove();
+			q.remove();
+			head = q.peek();
+			
+			System.out.println("THE HEAD OF THE QUEUE AFTER 2 DELETIONS HAS ARRIVAL TIME: " + head.arrivalTime + "AND A SERVICE TIME OF: " + head.serviceTime );
+*/		
 	}
 }
