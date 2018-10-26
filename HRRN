@@ -1,0 +1,202 @@
+package eventScheduler;
+
+import java.util.*; 
+
+public class HRRN {
+	
+	public static ArrayList<Event> list;
+	//public static Queue<Event> q;
+	public static Event head;
+	public static float newArrivalTime;
+	public static float currentTime;
+	public static boolean serverBusy;
+	public static float averageServiceTime;
+	public static float lambda;
+	public static int eventsCompleted;
+	public static float turnaroundArr[];
+	
+	
+	public static void init(){
+		list = new ArrayList<Event>();
+		//q = new LinkedList<Event>();
+		Event head = null;
+		newArrivalTime = 0;
+		serverBusy = false;
+		currentTime = 0;
+		averageServiceTime = (float) 0.06;
+		lambda = 0;
+		eventsCompleted = 0;
+		turnaroundArr = new float [10000];
+		scheduleEvent(0);
+	}
+	
+	
+	public static float generateArrivalTime(float lambda) {
+	    Random r = new Random();
+	    double L = Math.exp(-lambda);
+	    float k = 0;
+	    double p = 1.0;
+	    do {
+	        p = p * r.nextDouble();
+	        k++;
+	    } while (p > L);
+	    return k - 1;
+	}
+	
+	
+	public static float generateServiceTime(float lambda) {
+		float expRandom = (float) (-lambda * Math.log(Math.random())/Math.log(2));
+		return expRandom;
+	}
+	
+/*	
+	public static float urand() {
+		Random rand = new Random();
+		float  n = rand.nextInt(1) + 0;
+		return n;
+	}
+*/		
+	
+	public static float calculateUtilization(float lambda) {
+		return (lambda * averageServiceTime);
+	}
+	
+	public static float calculateQ(float lambda, float Tq) {
+		return (lambda * Tq);
+	}
+	
+	public static float calculateAverageWaitingTime(float averageTurnaroundTime) {
+		return (averageTurnaroundTime - averageServiceTime);
+	}
+	
+	public static void scheduleEvent(int i) {
+		if(i == 0) {
+			processEventArrival();
+		}
+		else {
+			processEventDeparture();
+			//System.out.println("Process departed from Queue at " + currentTime);
+		}
+	}
+	
+	public static void processEventDeparture() {
+		int i = 0;
+		if(eventsCompleted == 0) {
+			head = list.get(i);
+			currentTime = (head.arrivalTime + head.serviceTime);
+			head.completionTime = currentTime;
+		}
+		else {
+			i = findHighestR();
+			head = list.get(i);
+			if(head.arrivalTime < currentTime) {
+				currentTime += head.serviceTime;
+				head.completionTime = currentTime;
+			}
+			else {
+				i = findHighestR();
+				head = list.get(i);
+				currentTime = head.arrivalTime;
+				currentTime += head.serviceTime;
+				head.completionTime = currentTime;
+			}
+		}
+		turnaroundArr[eventsCompleted] = (head.completionTime - head.arrivalTime);
+		list.remove(i);
+		//q.remove();
+		eventsCompleted++;
+	}
+	
+	
+	public static void processEventArrival() {
+		if(serverBusy == false) {
+			serverBusy = true;
+			Event ae = new Event();
+			newArrivalTime += generateArrivalTime(lambda);
+			ae.arrivalTime = newArrivalTime;
+			ae.serviceTime = generateServiceTime(averageServiceTime);
+			list.add(ae);
+			//q.add(ae);
+			//scheduleEvent(1);
+			//System.out.println("Process " + (eventsCompleted + 1) + " arrived to Queue at time " + ae.arrivalTime);
+			//System.out.println("With a service time of " + ae.serviceTime);
+		}
+		else {
+			Event ae = new Event();
+			newArrivalTime += generateArrivalTime(lambda);
+			ae.arrivalTime = newArrivalTime;
+			ae.serviceTime = generateServiceTime(averageServiceTime);
+			//q.add(ae);
+			list.add(ae);
+			//scheduleEvent(1);
+			//System.out.println("Process " + (eventsCompleted + 1) +" arrived to Queue at time " + ae.arrivalTime);
+			//System.out.println("With a service time of " + ae.serviceTime);
+		}
+	}
+	
+	public static int findHighestR() {
+		int i = 0;
+		Event highestR = list.get(0);
+		highestR.waitingTime = (currentTime - highestR.arrivalTime); 
+		highestR.responseRatio = (highestR.serviceTime + highestR.waitingTime) / highestR.serviceTime;
+		for(int j =1; j < list.size()-1; j++) {
+			Event eve = list.get(j);
+			eve.waitingTime = (currentTime - eve.arrivalTime);
+			eve.responseRatio = (eve.serviceTime + eve.waitingTime) / eve.serviceTime;
+			if (eve.responseRatio > highestR.responseRatio) {
+				highestR = eve;
+				i = j;
+			}
+		}
+		return i;
+	}
+	
+	public static void runSim() {
+		
+		while(eventsCompleted < 10000) {
+			scheduleEvent(0);
+		}
+		head = null;
+	}
+	
+	public static void generateReport() {
+		float total = 0;
+		for(int j = 0; j < 10000; j++) {
+			total += turnaroundArr[j];
+		}
+
+		
+		float row = calculateUtilization(lambda);
+		float averageTurnaroundRate = (total / 10000);
+		float averageWaitingTime = calculateAverageWaitingTime(averageTurnaroundRate);
+		float q = calculateQ(lambda, averageTurnaroundRate);
+		float totalThroughput = 10000 / currentTime;
+		
+		//float testQ = (row / (1 - row));
+		
+		System.out.print("\n");
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+		System.out.println("AVERAGE TURNAROUND TIME: " + averageTurnaroundRate);
+		System.out.println("CPU UTILIZATION: " + row);
+		System.out.println("AVERAGE NUMBER OF PROCESSES IN QUEUE: " + q);
+		System.out.println("TOTAL THROUGHPUT: " + totalThroughput);
+		//System.out.println("THIS NUM SHOULD MATCH Q: " + testQ);
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+	}
+	
+	
+	
+	public static void main(String args[])
+	{
+		init();
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter lambda(average arrival rate): ");
+		lambda = sc.nextFloat();
+		runSim();
+		generateReport();
+			
+		serverBusy = false;
+		
+	}
+}
+	
