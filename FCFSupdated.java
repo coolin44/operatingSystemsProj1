@@ -8,15 +8,11 @@ import java.util.Queue;
 public class FCFS {
 	
 	public static Queue<Event> q;
-	public static int numberOfProccessesCompleted;
 	public static Event head;
-	public static float newCompletionTime;
 	public static float newArrivalTime;
 	public static float currentTime;
 	public static boolean serverBusy;
-	public static int eventsInQueue;
 	public static float averageServiceTime;
-	public static float averageNumberOfEventsInQueue;
 	public static float lambda;
 	public static int eventsCompleted;
 	public static float turnaroundArr[];
@@ -24,25 +20,21 @@ public class FCFS {
 	
 	public static void init(){
 		q = new LinkedList<Event>();
-		numberOfProccessesCompleted = 0;
 		Event head = null;
-		newCompletionTime = 0;
 		newArrivalTime = 0;
 		serverBusy = false;
 		currentTime = 0;
-		eventsInQueue = 0;
 		averageServiceTime = (float) 0.06;
-		averageNumberOfEventsInQueue = 0;
 		lambda = 0;
 		eventsCompleted = 0;
 		turnaroundArr = new float [10000];
 	}
 	
 	
-	public static int generateArrivalTime(float lambda) {
+	public static float generateArrivalTime(float lambda) {
 	    Random r = new Random();
 	    double L = Math.exp(-lambda);
-	    int k = 0;
+	    float k = 0;
 	    double p = 1.0;
 	    do {
 	        p = p * r.nextDouble();
@@ -119,7 +111,7 @@ public class FCFS {
 			ae.arrivalTime = newArrivalTime;
 			ae.serviceTime = generateServiceTime(averageServiceTime);
 			q.add(ae);
-			System.out.println("Process arrived to Queue at time " + ae.arrivalTime);
+			System.out.println("Process " + (eventsCompleted + 1) + " arrived to Queue at time " + ae.arrivalTime);
 			System.out.println("With a service time of " + ae.serviceTime);
 		}
 		else {
@@ -128,13 +120,13 @@ public class FCFS {
 			ae.arrivalTime = newArrivalTime;
 			ae.serviceTime = generateServiceTime(averageServiceTime);
 			q.add(ae);
-			System.out.println("Process arrived to Queue at time " + ae.arrivalTime);
+			System.out.println("Process " + (eventsCompleted + 1) +" arrived to Queue at time " + ae.arrivalTime);
 			System.out.println("With a service time of " + ae.serviceTime);
 		}
 	}
 	
 	
-	public void runSim() {
+	public static void runSim() {
 		
 		while(eventsCompleted < 10000) {
 			scheduleEvent(0);
@@ -142,108 +134,7 @@ public class FCFS {
 		}
 	}
 	
-	
-	
-	public static void main(String args[])
-	{
-		init();
-		Scanner sc = new Scanner(System.in);
-		System.out.println("Enter lambda(average arrival rate): ");
-		lambda = sc.nextFloat();
-		
-		//System.out.println("enter no of process: ");
-		//int n = sc.nextInt();
-		
-		int n = 10500;
-		
-/*		
-		for(int i =0; i <= n; i++) {
-			Event e = new Event(0, currentTime, lambda);
-			processEventArrival(e);
-		}
-*/		
-
-/*		
-		Event ae = new Event(0, currentTime, lambda);
-		q.add(ae);
-		Event head = q.peek();
-		System.out.println("The first Arrival Time is: " + ae.arrivalTime);
-		System.out.println("The first Service Time is: " + ae.serviceTime);
-		ae.completionTime = (ae.arrivalTime + ae.serviceTime);
-		currentTime = ae.completionTime;
-		System.out.println("The first process completes at " + ae.completionTime );
-		
-		Event nextArrival = new Event(0, currentTime, lambda);
-		if(nextArrival.arrivalTime <= )
-		q.remove();
-*/
-		
-		//used to generate a queue of events 
-		
-/*		
-		for(int i = 0; i < n; i++)
-		{
-			
-			Event ae = new Event();
-			
-			newArrivalTime += generateArrivalTime(lambda);
-			ae.arrivalTime = newArrivalTime;
-			ae.type = 0;
-			
-			ae.serviceTime = generateServiceTime(averageServiceTime);
-			
-			System.out.println("The " + (i+1) + " Arrival Time is: " + ae.arrivalTime);
-			System.out.println("The " + (i+1) + " Service Time is: " + ae.serviceTime);
-
-			q.add(ae);	
-			eventsInQueue++;
-			
-				
-		}	
-*/
-		
-		
-/*		
-		float turnaroundArr[] = new float[10000];
-		
-		int i = 0;
-		float time = 0;
-
-		while(numberOfProccessesCompleted < 10000) {
-			
-			if(!serverBusy) {
-				serverBusy = true;
-				head = q.peek();
-				time = (head.arrivalTime + head.serviceTime);
-				head.completionTime = time;
-			}
-			else {
-				head = q.peek();
-				if(head.arrivalTime < time) {
-					time += head.serviceTime;
-				//	System.out.println("Process arrived before CPU was ready");
-					head.completionTime = time;
-				}
-				else {
-					time = head.arrivalTime;
-					time += head.serviceTime;
-					head.completionTime = time;
-				//	System.out.println("Process arrived after CPU was ready, CPU was idle for a bit.");
-				}
-			}
-			
-			
-			turnaroundArr[i] = (head.completionTime - head.arrivalTime);
-		//	System.out.println("Process " + (i+1) + " ARRIVAL: " + head.arrivalTime + 
-		//			" SERVICE: " + head.serviceTime + " COMPLETION: " + head.completionTime);
-			i++;
-			q.remove();
-			eventsInQueue--;
-			numberOfProccessesCompleted++;
-		}
-*/		
-		serverBusy = false;
-		
+	public static void generateReport() {
 		float total = 0;
 		for(int j = 0; j < 10000; j++) {
 			total += turnaroundArr[j];
@@ -262,6 +153,22 @@ public class FCFS {
 		System.out.println("CPU Utilization: " + row);
 		System.out.println("Average Number Of Processes In Queue: " + q);
 		System.out.println("THIS NUM SHOULD MATCH Q: " + testQ);
+	}
+	
+	
+	
+	public static void main(String args[])
+	{
+		init();
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter lambda(average arrival rate): ");
+		lambda = sc.nextFloat();
+		runSim();
+		generateReport();
+			
+		serverBusy = false;
+		
+
 	
 	}
 }
