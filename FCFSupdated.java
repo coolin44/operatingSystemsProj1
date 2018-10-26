@@ -28,6 +28,7 @@ public class FCFS {
 		lambda = 0;
 		eventsCompleted = 0;
 		turnaroundArr = new float [10000];
+		scheduleEvent(0);
 	}
 	
 	
@@ -75,7 +76,7 @@ public class FCFS {
 		}
 		else {
 			processEventDeparture();
-			System.out.println("Process departed from Queue at " + currentTime);
+			//System.out.println("Process departed from Queue at " + currentTime);
 		}
 	}
 	
@@ -111,8 +112,9 @@ public class FCFS {
 			ae.arrivalTime = newArrivalTime;
 			ae.serviceTime = generateServiceTime(averageServiceTime);
 			q.add(ae);
-			System.out.println("Process " + (eventsCompleted + 1) + " arrived to Queue at time " + ae.arrivalTime);
-			System.out.println("With a service time of " + ae.serviceTime);
+			scheduleEvent(1);
+			//System.out.println("Process " + (eventsCompleted + 1) + " arrived to Queue at time " + ae.arrivalTime);
+			//System.out.println("With a service time of " + ae.serviceTime);
 		}
 		else {
 			Event ae = new Event();
@@ -120,8 +122,9 @@ public class FCFS {
 			ae.arrivalTime = newArrivalTime;
 			ae.serviceTime = generateServiceTime(averageServiceTime);
 			q.add(ae);
-			System.out.println("Process " + (eventsCompleted + 1) +" arrived to Queue at time " + ae.arrivalTime);
-			System.out.println("With a service time of " + ae.serviceTime);
+			scheduleEvent(1);
+			//System.out.println("Process " + (eventsCompleted + 1) +" arrived to Queue at time " + ae.arrivalTime);
+			//System.out.println("With a service time of " + ae.serviceTime);
 		}
 	}
 	
@@ -130,8 +133,8 @@ public class FCFS {
 		
 		while(eventsCompleted < 10000) {
 			scheduleEvent(0);
-			scheduleEvent(1);
 		}
+		head = null;
 	}
 	
 	public static void generateReport() {
@@ -145,14 +148,18 @@ public class FCFS {
 		float averageTurnaroundRate = (total / 10000);
 		float averageWaitingTime = calculateAverageWaitingTime(averageTurnaroundRate);
 		float q = calculateQ(lambda, averageTurnaroundRate);
+		float totalThroughput = 10000 / currentTime;
 		
-		float testQ = (row / (1 - row));
+		//float testQ = (row / (1 - row));
 		
 		System.out.print("\n");
-		System.out.println("Average Turnaround Time: " + averageTurnaroundRate);
-		System.out.println("CPU Utilization: " + row);
-		System.out.println("Average Number Of Processes In Queue: " + q);
-		System.out.println("THIS NUM SHOULD MATCH Q: " + testQ);
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+		System.out.println("AVERAGE TURNAROUND TIME: " + averageTurnaroundRate);
+		System.out.println("CPU UTILIZATION: " + row);
+		System.out.println("AVERAGE NUMBER OF PROCESSES IN QUEUE: " + q);
+		System.out.println("TOTAL THROUGHPUT: " + totalThroughput);
+		//System.out.println("THIS NUM SHOULD MATCH Q: " + testQ);
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
 	}
 	
 	
@@ -168,7 +175,5 @@ public class FCFS {
 			
 		serverBusy = false;
 		
-
-	
 	}
 }
