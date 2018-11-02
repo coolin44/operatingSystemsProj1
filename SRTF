@@ -1,0 +1,213 @@
+package eventScheduler;
+
+import java.util.*; 
+
+public class SRTF {
+	
+	public static Queue<EventSRTF> list;
+	public static Queue<EventSRTF> readyQueue;
+	public static double newArrivalTime;
+	public static double currentTime;
+	public static boolean serverBusy;
+	public static double averageServiceTime;
+	public static double lambda;
+	public static int eventsCompleted;
+	public static double turnaroundArr[];
+	public static double totalEventsInQueue;
+	public static double timeSpentOnCurrentEvent;
+	public static int cycles;
+	public static double timeSpentIdle;
+	
+	
+	public static void init(){
+		list = new LinkedList<EventSRTF>();
+		readyQueue = new LinkedList<EventSRTF>();
+		newArrivalTime = 0;
+		serverBusy = false;
+		averageServiceTime = (double) 0.042;
+		eventsCompleted = 0;
+		turnaroundArr = new double [20000];
+		generateEvents();
+		totalEventsInQueue = 0;
+		timeSpentOnCurrentEvent = 0;
+		cycles = 0;
+		timeSpentIdle = 0;
+	}
+	
+	public static double generateArrivalTime(double lambda) {
+		return (Math.log(Math.random())/-lambda);
+	}
+	
+	public static double getNumberOfEventsInQueue() {
+		int num = (readyQueue.size());
+		for(int i=0; i < readyQueue.size();i++) {
+			EventSRTF e = new EventSRTF();
+			e = ((LinkedList<EventSRTF>) readyQueue).get(i);
+		}
+		return num;
+	}
+
+	public static double generateServiceTime(double lambda) {
+		double expRandom = (double) (-lambda * Math.log(Math.random())/Math.log(2));
+		return expRandom;
+	}
+
+	
+	public static void generateReadyQueue() {
+		int i = 0;
+		EventSRTF e = new EventSRTF();
+		e = ((LinkedList<EventSRTF>) list).get(0);
+		while(e.arrivalTime <= currentTime) {
+			e = ((LinkedList<EventSRTF>) list).get(i);
+			if(!readyQueue.contains(e)) {
+				readyQueue.add(e);
+				list.remove(e);
+			}
+			i++;
+			try {
+			e = ((LinkedList<EventSRTF>) list).get(i);
+			}
+			catch(IndexOutOfBoundsException ex) {
+				System.out.println("Index out of bounds exception...");
+				break;
+			}		
+		}
+		if(readyQueue.isEmpty()) {
+			readyQueue.add(list.peek());
+			list.remove();
+		}
+	}
+	
+	public static int findShortestTimeRemaining() {
+		generateReadyQueue();
+		int i = 0;
+		EventSRTF shortestTimeRemaining = ((LinkedList<EventSRTF>) readyQueue).get(0);
+		for(int j = 0; j < readyQueue.size(); j++) {
+			EventSRTF eve = ((LinkedList<EventSRTF>) readyQueue).get(j);
+			if(eve.remainingTime < shortestTimeRemaining.remainingTime) {
+				shortestTimeRemaining = eve;
+				i = j;
+			}
+		}
+		return i;
+	}
+	
+	public static void runSim() {
+		totalEventsInQueue = 0;
+		while(eventsCompleted < 10001) {
+			processEvent();
+			totalEventsInQueue += getNumberOfEventsInQueue();
+			cycles++;
+		}
+	}
+	
+	public static void processEvent() {
+		int index = findShortestTimeRemaining();
+		EventSRTF e = ((LinkedList<EventSRTF>) readyQueue).get(index);
+		if(currentTime < e.arrivalTime) {
+			timeSpentIdle += (e.arrivalTime - currentTime);
+			currentTime = e.arrivalTime;
+		}
+		e.remainingTime = e.remainingTime- .000001;
+		currentTime = currentTime + .000001;
+		if(e.remainingTime <= 0) {			
+			e.completed = true;
+			e.completionTime = currentTime;
+			turnaroundArr[eventsCompleted] = (e.completionTime - e.arrivalTime);
+			System.out.println("Event " + e.place + " AT: " + e.arrivalTime + " ST: " + e.serviceTime + " CT: " + e.completionTime);
+			((LinkedList<EventSRTF>) readyQueue).remove(index);
+			eventsCompleted++;
+		}
+	}
+	
+	
+	public static void generateEvents() {
+		EventSRTF first = new EventSRTF();
+		first.arrivalTime = generateArrivalTime(lambda);
+		first.place = 0;
+		newArrivalTime += first.arrivalTime;
+		first.serviceTime = generateServiceTime(averageServiceTime);
+		first.remainingTime = first.serviceTime;
+		currentTime = first.arrivalTime;
+		readyQueue.add(first);
+		for(int i = 1; i < 20000; i++) {
+			EventSRTF e = new EventSRTF();
+			newArrivalTime += generateArrivalTime(lambda);
+			e.place = i;
+			e.arrivalTime = newArrivalTime;
+			e.serviceTime = generateServiceTime(averageServiceTime);
+			e.remainingTime = e.serviceTime;
+			e.completed = false;
+			list.add(e);
+		}
+	}
+	
+	public static double calculateUtilization(double lambda) {
+		return (lambda * averageServiceTime);
+	}
+	
+	public static double calculateQ(double lambda, double Tq) {
+		return (lambda * Tq);
+	}
+	
+	public static double calculateAverageWaitingTime(double averageTurnaroundTime) {
+		return (averageTurnaroundTime - averageServiceTime);
+	}
+	
+	public static void generateReport() {
+		double total = 0;
+		for(int j = 0; j < 10000; j++) {
+			total += turnaroundArr[j];
+		}
+
+		double averageNumOfEventsInQueue = (double)(totalEventsInQueue / cycles);
+		double averageTurnaroundRate = (total / 10000);
+		double averageWaitingTime = calculateAverageWaitingTime(averageTurnaroundRate);
+		double q = calculateQ(lambda, averageTurnaroundRate);
+		double totalThroughput = 10000 / currentTime;
+		double testRow = (lambda / (1/ averageServiceTime));
+		double row = (1 - (timeSpentIdle / currentTime));
+		double testQ = ((row) / (1 - row));
+		
+		System.out.print("\n");
+		System.out.println("* * * * * * * * *ACTUAL DATA * * * * * * * * * * * * * * * * * * * * * * * *");
+		System.out.println("AVERAGE TURNAROUND TIME: " + averageTurnaroundRate);
+		System.out.println("TOTAL THROUGHPUT: " + totalThroughput);
+		System.out.println("CPU UTILIZATION: " + row);
+		System.out.println("AVERAGE NUMBER OF PROCESSES IN READY QUEUE: " + averageNumOfEventsInQueue);
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+		System.out.print("\n");
+		System.out.println("* * * * * * * * * TEST DATA* * * * * * * * * * * * * * * * * * * * * * * *");
+		System.out.println("TESTING ROW: " + testRow);
+		System.out.println("AVERAGE NUMBER OF PROCESSES IN QUEUE: " + q);
+		System.out.println("TEST Q WITH REAL ROW: " + testQ);
+		System.out.println("AVERAGE WAITING TIME: " + averageWaitingTime);
+		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
+	}	
+	
+	public static void main(String args[])
+	{
+		Scanner sc = new Scanner(System.in);
+		System.out.println("Enter lambda(average arrival rate): ");
+		lambda = sc.nextDouble();
+		init();
+		
+		
+		double total = 0;
+		for(int i = 0; i < list.size();i++) {
+			EventSRTF e = new EventSRTF();
+			e = ((LinkedList<EventSRTF>) list).get(i);
+			total += e.serviceTime;
+		}
+		
+		double avg = total /15000;
+		
+		
+		runSim();
+		generateReport();
+		System.out.println("Avg Service TIME: " + avg);
+		
+		serverBusy = false;
+		
+	}
+}
