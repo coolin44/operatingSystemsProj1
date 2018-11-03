@@ -7,34 +7,34 @@ import java.util.Queue;
  
 public class FCFS {
 	
-	public static Queue<Event> list;
-	public static Queue<Event> readyQueue;
-	public static Event head;
+	public static LinkedList<Process> list;
+	public static LinkedList<Process> readyQueue;
+	public static Process head;
 	public static double newArrivalTime;
 	public static double currentTime;
 	public static boolean serverBusy;
 	public static double averageServiceTime;
 	public static double lambda;
-	public static int eventsCompleted;
+	public static int ProcessesCompleted;
 	public static double turnaroundArr[];
 	public static int cycles;
-	public static int totalEventsInQueue;
+	public static int totalProcessesInQueue;
 	public static double timeSpentIdle;
 	
 	
 	public static void init(){
-		list = new LinkedList<Event>();
-		readyQueue = new LinkedList<Event>();
+		list = new LinkedList<Process>();
+		readyQueue = new LinkedList<Process>();
 		newArrivalTime = 0;
 		serverBusy = false;
 		currentTime = 0;
-		averageServiceTime = (double) 0.042;
-		eventsCompleted = 0;
+		averageServiceTime = (double) 0.0315;
+		ProcessesCompleted = 0;
 		turnaroundArr = new double [10000];
 		cycles = 0;
-		totalEventsInQueue = 0;
+		totalProcessesInQueue = 0;
 		timeSpentIdle = 0;
-		generateEvents();
+		generateProcesses();
 	}
 	
 	public static double poissonRandomArrival(double lambda) {
@@ -58,13 +58,13 @@ public class FCFS {
 		return (averageTurnaroundTime - averageServiceTime);
 	}
 	
-	public static double getNumberOfEventsInQueue() {
+	public static double getNumberOfProcessesInQueue() {
 		return (readyQueue.size());
 
 	}
 	
 	public static void generateReadyQueue() {
-		Event e = new Event();
+		Process e = new Process();
 		e = list.peek();
 		while(e.arrivalTime <= currentTime) {
 			e = list.peek();
@@ -86,9 +86,9 @@ public class FCFS {
 		}
 	}
 	
-	public static void processEvent() {
+	public static void processProcess() {
 		generateReadyQueue();
-		Event e = readyQueue.peek();
+		Process e = readyQueue.peek();
 		if(currentTime < e.arrivalTime) {
 			timeSpentIdle += (e.arrivalTime - currentTime);
 			currentTime = e.arrivalTime;
@@ -96,41 +96,69 @@ public class FCFS {
 		e.completionTime = (currentTime + e.serviceTime);
 		currentTime = e.completionTime;
 		e.completed = true;
-		turnaroundArr[eventsCompleted] = (e.completionTime - e.arrivalTime);
-		readyQueue.remove();
-		eventsCompleted++;
+		turnaroundArr[ProcessesCompleted] = (e.completionTime - e.arrivalTime);
+		Process p = new Process();
+		p.type = 1;
+		//readyQueue.add(0, p);
+		scheduleDeparture();
 	}
 	
-	public static void generateEvents() {
-		Event first = new Event();
+	public static void scheduleDeparture() {
+		readyQueue.remove();
+		ProcessesCompleted++;
+	}
+	
+	
+	public static void generateProcesses() {
+		Process first = new Process();
 		first.arrivalTime = poissonRandomArrival(lambda);
 		newArrivalTime += first.arrivalTime;
 		first.serviceTime = generateServiceTime(averageServiceTime);
 		first.place = 0;
+		first.type = 0;
 		list.add(first);
 		readyQueue.add(first);
 		list.remove();
 		first.completionTime = (first.arrivalTime + first.serviceTime);
 		currentTime = first.completionTime;
 		first.completed = true;
-		turnaroundArr[eventsCompleted] = (first.completionTime - first.arrivalTime);
-		readyQueue.remove();
-		eventsCompleted++;
+		turnaroundArr[ProcessesCompleted] = (first.completionTime - first.arrivalTime);
+		Process p = new Process();
+		p.type = 1;
+		//readyQueue.add(0, p);
+		scheduleDeparture();
 		for(int i = 1; i < 20000; i++) {
-			Event e = new Event();
+			Process e = new Process();
 			newArrivalTime += poissonRandomArrival(lambda);
 			e.arrivalTime = newArrivalTime;
 			e.serviceTime = generateServiceTime(averageServiceTime);
 			e.completed = false;
 			e.place = i;
+			e.type = 0;
 			list.add(e);
 		}
 	}
+/*	
+	public static void runSim() {
+		Process p = readyQueue.peek();
+		while(ProcessesCompleted < 10000) {
+			switch(p.type) {
+				case 1: scheduleDeparture();
+				break;
+				case 0:
+					processProcess();
+					totalProcessesInQueue += getNumberOfProcessesInQueue();
+					cycles++;
+			}
+			p = readyQueue.peek();
+		}
+	}
+*/	
 	
 	public static void runSim() {
-		while(eventsCompleted < 10000) {
-			processEvent();
-			totalEventsInQueue += getNumberOfEventsInQueue();
+		while(ProcessesCompleted < 10000) {
+			processProcess();
+			totalProcessesInQueue += getNumberOfProcessesInQueue();
 			cycles++;
 		}
 		head = null;
@@ -143,10 +171,10 @@ public class FCFS {
 			total += turnaroundArr[j];
 		}
 
-		double averageNumOfEventsInQueue = (double)(totalEventsInQueue / cycles);
+		double averageNumOfProcessesInQueue = (double)(totalProcessesInQueue / cycles);
 		double averageTurnaroundRate = (total / 10000);
 		double averageWaitingTime = calculateAverageWaitingTime(averageTurnaroundRate);
-		double q = calculateQ(lambda, averageTurnaroundRate);
+		double q = calculateQ(lambda, .06);
 		double totalThroughput = 10000 / currentTime;
 		double testRow = (lambda / (1/ averageServiceTime));
 		double row = (1 - (timeSpentIdle / currentTime));
@@ -157,7 +185,7 @@ public class FCFS {
 		System.out.println("AVERAGE TURNAROUND TIME: " + averageTurnaroundRate);
 		System.out.println("TOTAL THROUGHPUT: " + totalThroughput);
 		System.out.println("CPU UTILIZATION: " + row);
-		System.out.println("AVERAGE NUMBER OF PROCESSES IN READY QUEUE: " + averageNumOfEventsInQueue);
+		System.out.println("AVERAGE NUMBER OF PROCESSES IN READY QUEUE: " + averageNumOfProcessesInQueue);
 		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
 		System.out.print("\n");
 		System.out.println("* * * * * * * * * TEST DATA* * * * * * * * * * * * * * * * * * * * * * * *");
@@ -175,7 +203,6 @@ public class FCFS {
 		for(int j = 0; j < 10000; j++) {
 			total += turnaroundArr[j];
 		}
-
 		
 		double row = calculateUtilization(lambda);
 		double averageTurnaroundRate = (total / 10000);
@@ -208,8 +235,8 @@ public class FCFS {
 		
 		double total = 0;
 		for(int i = 0; i < list.size();i++) {
-			Event e = new Event();
-			e = ((LinkedList<Event>) list).get(i);
+			Process e = new Process();
+			e = ((LinkedList<Process>) list).get(i);
 			total += e.serviceTime;
 		}
 		

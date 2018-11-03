@@ -4,9 +4,9 @@ import java.util.*;
 
 public class HRRNext {
 	//used to hold generated events
-	public static Queue<EventHRRN> list;
+	public static Queue<ProcessHRRN> list;
 	//used to hold events that are ready to be processed
-	public static Queue<EventHRRN> readyQueue;
+	public static Queue<ProcessHRRN> readyQueue;
 	//used to generate random arrival times in an increading order
 	public static double newArrivalTime;
 	//used to hold the current time
@@ -30,8 +30,8 @@ public class HRRNext {
 	
 	//this method is used to initialize all global variables and generate the list of events
 	public static void init(){
-		list = new LinkedList<EventHRRN>();
-		readyQueue = new LinkedList<EventHRRN>();
+		list = new LinkedList<ProcessHRRN>();
+		readyQueue = new LinkedList<ProcessHRRN>();
 		newArrivalTime = 0;
 		serverBusy = false;
 		averageServiceTime = (double) 0.042;
@@ -63,17 +63,17 @@ public class HRRNext {
 	//used to find all events that are ready and put them in the Ready Queue
 	public static void generateReadyQueue() {
 		int i = 0;
-		EventHRRN e = new EventHRRN();
-		e = ((LinkedList<EventHRRN>) list).get(0);
+		ProcessHRRN e = new ProcessHRRN();
+		e = ((LinkedList<ProcessHRRN>) list).get(0);
 		while(e.arrivalTime <= currentTime) {
-			e = ((LinkedList<EventHRRN>) list).get(i);
+			e = ((LinkedList<ProcessHRRN>) list).get(i);
 			if(!readyQueue.contains(e)) {
 				readyQueue.add(e);
 				list.remove(e);
 			}
 			i++;
 			try {
-			e = ((LinkedList<EventHRRN>) list).get(i);
+			e = ((LinkedList<ProcessHRRN>) list).get(i);
 			}
 			catch(IndexOutOfBoundsException ex) {
 				System.out.println("Index out of bounds exception...");
@@ -90,11 +90,11 @@ public class HRRNext {
 	public static int findHighestR() {
 		generateReadyQueue();
 		int i = 0;
-		EventHRRN highestR = ((LinkedList<EventHRRN>) readyQueue).get(0);
+		ProcessHRRN highestR = ((LinkedList<ProcessHRRN>) readyQueue).get(0);
 		highestR.waitingTime = (currentTime - highestR.arrivalTime); 
 		highestR.responseRatio = (highestR.serviceTime + highestR.waitingTime) / highestR.serviceTime;
 		for(int j =1; j < readyQueue.size()-1; j++) {
-			EventHRRN eve = ((LinkedList<EventHRRN>) readyQueue).get(j);
+			ProcessHRRN eve = ((LinkedList<ProcessHRRN>) readyQueue).get(j);
 			eve.waitingTime = (currentTime - eve.arrivalTime);
 			eve.responseRatio = (eve.serviceTime + eve.waitingTime) / eve.serviceTime;
 			if (eve.responseRatio > highestR.responseRatio && eve.arrivalTime <= currentTime) {
@@ -118,7 +118,7 @@ public class HRRNext {
 	//used to process the event that currently has the highest response ratio
 	public static void processEvent() {
 		int index = findHighestR();
-		EventHRRN e = ((LinkedList<EventHRRN>) readyQueue).get(index);
+		ProcessHRRN e = ((LinkedList<ProcessHRRN>) readyQueue).get(index);
 		if(currentTime < e.arrivalTime) {
 			timeSpentIdle += (e.arrivalTime - currentTime);
 			currentTime = e.arrivalTime;
@@ -127,13 +127,13 @@ public class HRRNext {
 		currentTime = e.completionTime;
 		e.completed = true;
 		turnaroundArr[eventsCompleted] = (e.completionTime - e.arrivalTime);
-		((LinkedList<EventHRRN>) readyQueue).remove(index);
+		((LinkedList<ProcessHRRN>) readyQueue).remove(index);
 		eventsCompleted++;
 	}
 	
 	//used to generate a list of 15000 events
 	public static void generateEvents() {
-		EventHRRN first = new EventHRRN();
+		ProcessHRRN first = new ProcessHRRN();
 		first.arrivalTime = poissonRandomArrival(lambda);
 		first.place = 0;
 		newArrivalTime += first.arrivalTime;
@@ -147,7 +147,7 @@ public class HRRNext {
 		list.remove();
 		eventsCompleted++;
 		for(int i = 1; i < 15000; i++) {
-			EventHRRN e = new EventHRRN();
+			ProcessHRRN e = new ProcessHRRN();
 			newArrivalTime += poissonRandomArrival(lambda);
 			e.place = i;
 			e.arrivalTime = newArrivalTime;
@@ -215,8 +215,8 @@ public class HRRNext {
 		
 		double total = 0;
 		for(int i = 0; i < list.size();i++) {
-			EventHRRN e = new EventHRRN();
-			e = ((LinkedList<EventHRRN>) list).get(i);
+			ProcessHRRN e = new ProcessHRRN();
+			e = ((LinkedList<ProcessHRRN>) list).get(i);
 			total += e.serviceTime;
 		}
 		

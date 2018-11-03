@@ -2,38 +2,32 @@ package eventScheduler;
 
 import java.util.*; 
 
-public class RR {
+public class SRTF {
 	
-	public static Queue<ProcessRR> list;
-	public static Queue<ProcessRR> readyQueue;
-	public static double newArrivalTime;
+	public static Queue<ProcessSRTF> list;
+	public static Queue<ProcessSRTF> readyQueue;
 	public static double currentTime;
 	public static boolean serverBusy;
 	public static double averageServiceTime;
-	public static double lambda;
+//	public static double lambda;
 	public static int eventsCompleted;
 	public static double turnaroundArr[];
 	public static double totalEventsInQueue;
-	public static double timeSpentOnCurrentEvent;
 	public static int cycles;
 	public static double timeSpentIdle;
-	public static double quantum;
 	
 	
-	public static void init(){
-		list = new LinkedList<ProcessRR>();
-		readyQueue = new LinkedList<ProcessRR>();
-		newArrivalTime = 0;
+	public static void init(double lambda){
+		list = new LinkedList<ProcessSRTF>();
+		readyQueue = new LinkedList<ProcessSRTF>();
 		serverBusy = false;
-		averageServiceTime = (double) 0.042;
+		averageServiceTime = (double) 0.06;
 		eventsCompleted = 0;
 		turnaroundArr = new double [20000];
+		generateEvents(lambda);
 		totalEventsInQueue = 0;
-		timeSpentOnCurrentEvent = 0;
 		cycles = 0;
 		timeSpentIdle = 0;
-		quantum = .02;
-		generateProcesses();
 	}
 	
 	public static double generateArrivalTime(double lambda) {
@@ -52,17 +46,17 @@ public class RR {
 	
 	public static void generateReadyQueue() {
 		int i = 0;
-		ProcessRR e = new ProcessRR();
+		ProcessSRTF e = new ProcessSRTF();
 		e = list.peek();
 		while(e.arrivalTime <= currentTime) {
-			e = ((LinkedList<ProcessRR>) list).get(i);
+			e = ((LinkedList<ProcessSRTF>) list).get(i);
 			if(!readyQueue.contains(e)) {
 				readyQueue.add(e);
 				list.remove(e);
 			}
 			i++;
 			try {
-			e = ((LinkedList<ProcessRR>) list).get(i);
+			e = ((LinkedList<ProcessSRTF>) list).get(i);
 			}
 			catch(IndexOutOfBoundsException ex) {
 				System.out.println("Index out of bounds exception...");
@@ -74,27 +68,70 @@ public class RR {
 			list.remove();
 		}
 	}
-
+/*	
+	public static int findShortestTimeRemaining() {
+		generateReadyQueue();
+		int i = 0;
+		ProcessSRTF shortestTimeRemaining = ((LinkedList<ProcessSRTF>) readyQueue).get(0);
+		for(int j = 0; j < readyQueue.size(); j++) {
+			ProcessSRTF eve = ((LinkedList<ProcessSRTF>) readyQueue).get(j);
+			if(eve.remainingTime < shortestTimeRemaining.remainingTime) {
+				shortestTimeRemaining = eve;
+				i = j;
+			}
+		}
+		return i;
+	}
+*/
+/*	
+	public static int binarySearch(Queue<ProcessSRTF> readyQueue, int l, int r, ProcessSRTF e) {
+		
+		
+		if(r >= l) {
+			int mid = l + (r - 1) / 2;
+			if(e.remainingTime )
+		}
+	}
+*/	
+	
+/*	
+	public static int findShortestTimeRemaining() {
+		generateReadyQueue();
+		Collections.sort( (List<ProcessSRTF>) readyQueue);
+		int i = 0;
+		ProcessSRTF shortestTimeRemaining = ((LinkedList<ProcessSRTF>) readyQueue).get(0);
+		for(int j = 0; j < readyQueue.size(); j++) {
+			ProcessSRTF eve = ((LinkedList<ProcessSRTF>) readyQueue).get(j);
+			if(eve.remainingTime < shortestTimeRemaining.remainingTime) {
+				shortestTimeRemaining = eve;
+				i = j;
+			}
+		}
+		return i;
+	}
+*/	
+	
+	
 	public static void runSim() {
 		totalEventsInQueue = 0;
-		while(eventsCompleted < 10000) {
+		while(eventsCompleted < 10001) {
 			processEvent();
 			totalEventsInQueue += getNumberOfEventsInQueue();
 			cycles++;
 		}
 	}
-	
 /*	
+	@SuppressWarnings("unchecked")
 	public static void processEvent() {
 		generateReadyQueue();
-		//Collections.sort( (List<ProcessRR>) readyQueue);
-		ProcessRR e = readyQueue.peek();
+		Collections.sort( (List<ProcessSRTF>) readyQueue);
+		ProcessSRTF e = readyQueue.peek();
 		if(currentTime < e.arrivalTime) {
 			timeSpentIdle += (e.arrivalTime - currentTime);
 			currentTime = e.arrivalTime;
 		}
-		e.remainingTime = e.remainingTime- .0001;
-		currentTime = currentTime + .0001;
+		e.remainingTime = e.remainingTime- .00001;
+		currentTime = currentTime + .00001;
 		if(e.remainingTime <= 0) {			
 			e.completed = true;
 			e.completionTime = currentTime;
@@ -104,39 +141,66 @@ public class RR {
 			eventsCompleted++;
 		}
 	}
-*/	
+*/
 	
 	public static void scheduleDeparture() {
-		//need to remove the top two events, 1 is the process and one is the departure
 		readyQueue.remove();
-		readyQueue.remove();
+		eventsCompleted++;
 	}
 	
+	
+	@SuppressWarnings("unchecked")
 	public static void processEvent() {
 		generateReadyQueue();
-		ProcessRR p = readyQueue.poll();
-		if(currentTime < p.arrivalTime) {
-			timeSpentIdle += (p.arrivalTime - currentTime);
-			currentTime = p.arrivalTime;
+		Collections.sort( (List<ProcessSRTF>) readyQueue);
+		serverBusy = true;
+		ProcessSRTF e = readyQueue.peek();
+		if(currentTime < e.arrivalTime) {
+			timeSpentIdle += (e.arrivalTime - currentTime);
+			currentTime = e.arrivalTime;
 		}
-		if (p.remainingTime <= quantum) {
-			currentTime += p.remainingTime;
-			p.completionTime = currentTime;
-			p.completed = true;
-			turnaroundArr[eventsCompleted] = (p.completionTime - p.arrivalTime);
-			eventsCompleted++;
-			System.out.println("Process " + p.place + " AT: " + p.arrivalTime + " ST: " + p.serviceTime + " CT: " + p.completionTime);
+		if(!checkIncomingProcesses(e)) {
+			currentTime += e.remainingTime;
+			e.completed = true;
+			e.completionTime = currentTime;
+			turnaroundArr[eventsCompleted] = (e.completionTime - e.arrivalTime);
+			System.out.println("Event " + e.place + " AT: " + e.arrivalTime + " ST: " + e.serviceTime + " CT: " + e.completionTime);
+			scheduleDeparture();
+			//readyQueue.remove();
+			//eventsCompleted++;
 		}
-		else {
-			p.remainingTime = p.remainingTime - quantum;
-			currentTime += quantum;
-			readyQueue.add(p);
-		}
+		
 	}
 	
+	public static boolean checkIncomingProcesses(ProcessSRTF current) {
+		//used to increase the speed, otherwise its extremely slow searching the entire list
+		int size;
+		if(list.size() > 1000) {
+			size = (int)(.3 * list.size());
+		}
+		else {
+			size = list.size();
+		}
+		
+		for(int i = 0; i < size; i++) {
+			ProcessSRTF e = new ProcessSRTF();
+			e = ((LinkedList<ProcessSRTF>) list).get(i);
+			if(e.arrivalTime <= (currentTime + current.remainingTime) && e.remainingTime < (current.remainingTime - (e.arrivalTime - currentTime))){
+				double timeSpentOnCurrentEvent = e.arrivalTime - currentTime;
+				current.remainingTime = current.remainingTime - timeSpentOnCurrentEvent;
+				currentTime = e.arrivalTime;
+				return true;
+			}
+		}
+		return false;
+			
+		}
+
 	
-	public static void generateProcesses() {
-		ProcessRR first = new ProcessRR();
+	
+	public static void generateEvents(double lambda) {
+		double newArrivalTime = 0;
+		ProcessSRTF first = new ProcessSRTF();
 		first.arrivalTime = generateArrivalTime(lambda);
 		first.place = 0;
 		newArrivalTime += first.arrivalTime;
@@ -145,7 +209,7 @@ public class RR {
 		currentTime = first.arrivalTime;
 		readyQueue.add(first);
 		for(int i = 1; i < 20000; i++) {
-			ProcessRR e = new ProcessRR();
+			ProcessSRTF e = new ProcessSRTF();
 			newArrivalTime += generateArrivalTime(lambda);
 			e.place = i;
 			e.arrivalTime = newArrivalTime;
@@ -177,9 +241,9 @@ public class RR {
 		double averageNumOfEventsInQueue = (double)(totalEventsInQueue / cycles);
 		double averageTurnaroundRate = (total / 10000);
 		double averageWaitingTime = calculateAverageWaitingTime(averageTurnaroundRate);
-		double q = calculateQ(lambda, averageTurnaroundRate);
+	//	double q = calculateQ(lambda, averageTurnaroundRate);
 		double totalThroughput = 10000 / currentTime;
-		double testRow = (lambda / (1/ averageServiceTime));
+	//	double testRow = (lambda / (1/ averageServiceTime));
 		double row = (1 - (timeSpentIdle / currentTime));
 		double testQ = ((row) / (1 - row));
 		
@@ -192,8 +256,8 @@ public class RR {
 		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
 		System.out.print("\n");
 		System.out.println("* * * * * * * * * TEST DATA* * * * * * * * * * * * * * * * * * * * * * * *");
-		System.out.println("TESTING ROW: " + testRow);
-		System.out.println("AVERAGE NUMBER OF PROCESSES IN QUEUE: " + q);
+	//	System.out.println("TESTING ROW: " + testRow);
+	//	System.out.println("AVERAGE NUMBER OF PROCESSES IN QUEUE: " + q);
 		System.out.println("TEST Q WITH REAL ROW: " + testQ);
 		System.out.println("AVERAGE WAITING TIME: " + averageWaitingTime);
 		System.out.println("* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *");
@@ -203,18 +267,18 @@ public class RR {
 	{
 		Scanner sc = new Scanner(System.in);
 		System.out.println("Enter lambda(average arrival rate): ");
-		lambda = sc.nextDouble();
-		init();
+		double lambda = sc.nextDouble();
+		init(lambda);
 		
 		
 		double total = 0;
 		for(int i = 0; i < list.size();i++) {
-			ProcessRR e = new ProcessRR();
-			e = ((LinkedList<ProcessRR>) list).get(i);
+			ProcessSRTF e = new ProcessSRTF();
+			e = ((LinkedList<ProcessSRTF>) list).get(i);
 			total += e.serviceTime;
 		}
 		
-		double avg = total /20000;
+		double avg = total /15000;
 		
 		
 		runSim();
